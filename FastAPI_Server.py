@@ -1,16 +1,13 @@
-from typing import Optional, List
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
-from pythonping import ping
 from os import system, path
 import uvicorn
 import requests
+import json
 import logging
 import serviceping
-from pydantic import BaseModel
 
-# TODO Make normal JSON transmit
-# https://python-scripts.com/json#decoding-custom-types
+# TODO Алгоритм авторизации: Клиент кидает, что идёт запуск сервиса на ip таком-то. Сервер записывает,
+#  и через минуту, обращяется на API, уже читая наименование, и описания функций
 
 app = FastAPI()
 clients = []
@@ -59,14 +56,27 @@ def send_to_service(_ip, name, prog, param):
         return HTTPException(status_code=404, detail="Client is not exciting!")
 
 
+def getCommands(ip):
+    response = requests.get("http://" + ip + "/openapi.json")
+    todos = json.loads(response.text)
+    todos = todos["paths"]
+    for comm in todos:
+        method = None
+        for meth in todos[comm]:
+            method = meth
+        summary = todos[comm][method]["summary"]
+        try:
+            desc = todos[comm][method]["description"]
+        except KeyError:
+            continue
+        print(comm, method, summary, desc)
+
+
 # http://127.0.0.1:8000/items/5?q=somequery.
-@app.post("/server/add_client/{name}/{port}/{comm}")
-def read_item(name: str, port: int, comm, request: Request):
+@app.post("/server/add_client/{name}/{port}")
+def read_item(name: str, port: int, request: Request):
     id = None
     ip = request.client.host
-    for i in range(len(comm)):
-        print(comm[i][0])
-        comm[i][0] = str(comm[i][0]).replace("|", "/")  # TODO тестить вот это
     for l in range(len(clients)):
         try:
             id = clients[l].index(name)
@@ -75,9 +85,12 @@ def read_item(name: str, port: int, comm, request: Request):
     if id is not None:
         clients.pop(id)
         logger.info(("ReConnected", name, ip, port))
-        logger.debug(comm)
+        logger.debug()
     else:
-        clients.append([name, ip, port, comm])
+        _ip = str(request.client.host) + ":" + str(request.client.port)
+        getCommands(_ip)
+        comm = None # idk how to get a commands, maybe create task, get commands after 1 minute, when uvicorn client
+        clients.append([name, ip, port, comm]) # started, idk.
         logger.info(("Connected", name, ip, port))
         logger.debug(comm)
     if name[:2] == "PC":

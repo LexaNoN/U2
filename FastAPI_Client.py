@@ -3,17 +3,18 @@ import uvicorn
 from random import randint
 from os import path
 import requests
-
 app = FastAPI()
 
-# there, we replace / with |, because http read / like test.com/test/command1 >|<, command2
-commands = {
-    ["|", "get", "name of pc"],
-    ["|shutdown", "get", "shutdown"],
-    ["|notify|{name}|{text}", "post", "send notify"]
-}
+name = ""
+port = 0
 
-
+@app.on_event("startup")
+async def startup_event():
+    print("111")
+    try:
+        requests.post('http://127.0.0.1:5000/server/add_client/%s/%s' % (name, str(port)))
+    except requests.exceptions.ConnectionError:
+        exit("Cannot connect to server!")
 
 @app.get("/")
 def read_root():
@@ -37,10 +38,5 @@ def read_item(text: str):
 _name = path.basename(__file__)
 if __name__ == "__main__":
     port = randint(5001, 5999)
-    print(port)
     name = "simp"
-    try:
-        requests.post('http://127.0.0.1:5000/server/add_client/%s/%s/%s' % (name, str(port), commands))
-    except requests.exceptions.ConnectionError:
-        exit("Cannot connect to server!")
     uvicorn.run(str(_name[:len(_name) - 3]) + ":app", host="localhost", port=port, log_level="info")
