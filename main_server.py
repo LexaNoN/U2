@@ -19,14 +19,6 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/dummypath",
-          summary="",
-          description="")
-async def get_body(request: Request):
-    return await request.body()
-
-# http://127.0.0.1:8000/items/5?q=somequery.
-
 @app.get("/server/getinfo")
 def read_item():
     return {"count client": len(clients), "clients": clients}
