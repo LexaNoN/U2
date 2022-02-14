@@ -17,9 +17,9 @@ spis_above_30 = []
 for j, i in enumerate(spis):
     if int(i.score) >= 30:
         spis_above_30.append(i)
-print(spis_above_30,"\n")
-pprint(spis_above_30)
-print("\n")
+#print(spis_above_30,"\n")
+#pprint(spis_above_30)
+#print("\n")
 pt.field_names = ["ID", "SCORE", "NAME", "AGE"]
 for i in spis_above_30:
     pt.add_row([i.id, i.score, i.name, i.age])
